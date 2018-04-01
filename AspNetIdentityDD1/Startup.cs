@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using AspNetIdentityDD1.Data;
+using AspNetIdentityDD1.Factories;
 using AspNetIdentityDD1.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -26,19 +28,24 @@ namespace AspNetIdentityDD1
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
-			var migrationAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName();
-			var connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=IdentityDemo;" +
+			var migrationAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+			var connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=PluralsightUser;" +
 				"Integrated Security=True;Connect Timeout=30;" +
 				"Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 
-			services.AddDbContext<IdentityDbContext>(opt => opt.UseSqlServer(connectionString, sql => 
+			services.AddDbContext<PluralsightUserDbContext>(opt => opt.UseSqlServer(connectionString, sql => 
 				sql.MigrationsAssembly(migrationAssembly.ToString())
 			));
 
-			services.AddIdentityCore<IdentityUser>(opt => { });
-			services.AddScoped<IUserStore<IdentityUser>, UserOnlyStore<IdentityUser, IdentityDbContext>>();
-			services.AddAuthentication("cookies")
-			.AddCookie("cookies", options => options.LoginPath = "/Home/Login");
+			services.AddIdentity<PluralsightUser, IdentityRole>(opt => { })
+				.AddEntityFrameworkStores<PluralsightUserDbContext>();
+
+			services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>, PluralsightUserClaimsPrincipalFactory>();
+
+			services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
+
+
+
 		}
 
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)

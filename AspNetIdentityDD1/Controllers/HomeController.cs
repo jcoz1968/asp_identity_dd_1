@@ -13,19 +13,23 @@ namespace AspNetIdentityDD1.Controllers
 {
 	public class HomeController : Controller
 	{
-		private UserManager<IdentityUser> _userManager;
+		private UserManager<PluralsightUser> _userManager;
+		private IUserClaimsPrincipalFactory<PluralsightUser> _claimsPrincipalFactory;
+		private SignInManager<PluralsightUser> _signInManager;
 
-		public HomeController(UserManager<IdentityUser> userManager)
+		public HomeController(UserManager<PluralsightUser> userManager,
+			IUserClaimsPrincipalFactory<PluralsightUser> claimsPrincipalFactory,
+			SignInManager<PluralsightUser> signInManager)
 		{
 			_userManager = userManager;
+			_claimsPrincipalFactory = claimsPrincipalFactory;
+			_signInManager = signInManager;
 		}
 
 		public IActionResult Index()
 		{
 			return View();
 		}
-
-
 
 		public IActionResult About()
 		{
@@ -46,6 +50,11 @@ namespace AspNetIdentityDD1.Controllers
 			return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 		}
 
+		public IActionResult Register()
+		{
+			return View();
+		}
+
 		[HttpPost]
 		[ValidateAntiForgeryToken]
 		public async Task<IActionResult> Register(RegisterModel model)
@@ -57,12 +66,16 @@ namespace AspNetIdentityDD1.Controllers
 
 				if(user == null)
 				{
-					user = new IdentityUser
+					user = new PluralsightUser
 					{
 						Id = Guid.NewGuid().ToString(),
 						UserName = model.UserName
 					};
 					var result = await _userManager.CreateAsync(user, model.Password);
+					if(result == null)
+					{
+
+					}
 				}
 				return View("Success");
 			}
@@ -85,14 +98,21 @@ namespace AspNetIdentityDD1.Controllers
 
 				if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
 				{
-					var identity = new ClaimsIdentity("cookies");
-					identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
-					identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
-
-					await HttpContext.SignInAsync("cookies", new ClaimsPrincipal(identity));
-
+					//var identity = new ClaimsIdentity("Identity.Application");
+					//identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
+					//identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
+					var principal = await _claimsPrincipalFactory.CreateAsync(user);
+					await HttpContext.SignInAsync("Identity.Application", principal);
 					return RedirectToAction("Index");
 				}
+
+				//SignInManager alternate method
+				//var signInResult = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, false, false);
+
+				//if(signInResult.Succeeded)
+				//{
+				//	return RedirectToAction("Index");
+				//}
 
 				ModelState.AddModelError("", "Invalid UserName or Password");
 			}
