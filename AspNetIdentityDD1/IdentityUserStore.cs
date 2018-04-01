@@ -11,9 +11,8 @@ using Dapper;
 
 namespace AspNetIdentityDD1
 {
-	public class IdentityUserStore : IUserStore<User>
+	public class IdentityUserStore : IUserStore<User>, IUserPasswordStore<User>
 	{
-
 		public static DbConnection GetOpenConnection()
 		{
 			var connection = new SqlConnection("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=IdentityDemo;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
@@ -82,6 +81,11 @@ namespace AspNetIdentityDD1
 			return Task.FromResult(user.NormalizedUserName);
 		}
 
+		public Task<string> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
+		{
+			return Task.FromResult(user.PasswordHash);
+		}
+
 		public Task<string> GetUserIdAsync(Models.User user, CancellationToken cancellationToken)
 		{
 			return Task.FromResult(user.Id);
@@ -92,9 +96,20 @@ namespace AspNetIdentityDD1
 			return Task.FromResult(user.UserName);
 		}
 
+		public Task<bool> HasPasswordAsync(User user, CancellationToken cancellationToken)
+		{
+			return Task.FromResult(user.PasswordHash != null);
+		}
+
 		public Task SetNormalizedUserNameAsync(Models.User user, string normalizedName, CancellationToken cancellationToken)
 		{
 			user.UserName = normalizedName;
+			return Task.CompletedTask;
+		}
+
+		public Task SetPasswordHashAsync(User user, string passwordHash, CancellationToken cancellationToken)
+		{
+			user.PasswordHash = passwordHash;
 			return Task.CompletedTask;
 		}
 

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetIdentityDD1.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,7 +24,8 @@ namespace AspNetIdentityDD1
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
-			services.AddIdentityCore<string>(opt => { });
+			services.AddIdentityCore<User>(opt => { });
+			services.AddScoped<IUserStore<User>, IdentityUserStore>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
