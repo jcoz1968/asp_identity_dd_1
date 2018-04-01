@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AspNetIdentityDD1.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,15 +23,24 @@ namespace AspNetIdentityDD1
 
 		public IConfiguration Configuration { get; }
 
-		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
-			services.AddIdentityCore<User>(opt => { });
-			services.AddScoped<IUserStore<User>, IdentityUserStore>();
+			var migrationAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName();
+			var connectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=IdentityDemo;" +
+				"Integrated Security=True;Connect Timeout=30;" +
+				"Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+
+			services.AddDbContext<IdentityDbContext>(opt => opt.UseSqlServer(connectionString, sql => 
+				sql.MigrationsAssembly(migrationAssembly.ToString())
+			));
+
+			services.AddIdentityCore<IdentityUser>(opt => { });
+			services.AddScoped<IUserStore<IdentityUser>, UserOnlyStore<IdentityUser, IdentityDbContext>>();
+			services.AddAuthentication("cookies")
+			.AddCookie("cookies", options => options.LoginPath = "/Home/Login");
 		}
 
-		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
 			if (env.IsDevelopment())
@@ -40,6 +52,8 @@ namespace AspNetIdentityDD1
 			{
 				app.UseExceptionHandler("/Home/Error");
 			}
+
+			app.UseAuthentication();
 
 			app.UseStaticFiles();
 

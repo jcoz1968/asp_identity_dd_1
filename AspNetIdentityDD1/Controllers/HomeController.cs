@@ -6,14 +6,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using AspNetIdentityDD1.Models;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 
 namespace AspNetIdentityDD1.Controllers
 {
 	public class HomeController : Controller
 	{
-		private UserManager<User> _userManager;
+		private UserManager<IdentityUser> _userManager;
 
-		public HomeController(UserManager<User> userManager)
+		public HomeController(UserManager<IdentityUser> userManager)
 		{
 			_userManager = userManager;
 		}
@@ -22,6 +24,8 @@ namespace AspNetIdentityDD1.Controllers
 		{
 			return View();
 		}
+
+
 
 		public IActionResult About()
 		{
@@ -53,7 +57,7 @@ namespace AspNetIdentityDD1.Controllers
 
 				if(user == null)
 				{
-					user = new User
+					user = new IdentityUser
 					{
 						Id = Guid.NewGuid().ToString(),
 						UserName = model.UserName
@@ -62,6 +66,37 @@ namespace AspNetIdentityDD1.Controllers
 				}
 				return View("Success");
 			}
+			return View();
+		}
+
+		[HttpGet]
+		public IActionResult Login()
+		{
+			return View();
+		}
+
+		[HttpPost]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> Login(LoginModel model)
+		{
+			if (ModelState.IsValid)
+			{
+				var user = await _userManager.FindByNameAsync(model.UserName);
+
+				if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+				{
+					var identity = new ClaimsIdentity("cookies");
+					identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
+					identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
+
+					await HttpContext.SignInAsync("cookies", new ClaimsPrincipal(identity));
+
+					return RedirectToAction("Index");
+				}
+
+				ModelState.AddModelError("", "Invalid UserName or Password");
+			}
+
 			return View();
 		}
 	}
