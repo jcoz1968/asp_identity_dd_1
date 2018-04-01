@@ -49,14 +49,32 @@ namespace AspNetIdentityDD1
 		{
 		}
 
-		public Task<Models.User> FindByIdAsync(string userId, CancellationToken cancellationToken)
+		public async Task<Models.User> FindByIdAsync(string userId, CancellationToken cancellationToken)
 		{
-			throw new NotImplementedException();
+			using (var connection = GetOpenConnection())
+			{
+				return await connection.QueryFirstOrDefaultAsync<User>(
+					"select * from Users where Id = @id", 
+					new
+					{
+						id = userId
+					}
+				);
+			}
 		}
 
-		public Task<Models.User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+		public async Task<Models.User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
 		{
-			throw new NotImplementedException();
+			using (var connection = GetOpenConnection())
+			{
+				return await connection.QueryFirstOrDefaultAsync<User>(
+					"select * from Users where NormalizedUserName = @name",
+					new
+					{
+						name = normalizedUserName
+					}
+				);
+			}
 		}
 
 		public Task<string> GetNormalizedUserNameAsync(Models.User user, CancellationToken cancellationToken)
