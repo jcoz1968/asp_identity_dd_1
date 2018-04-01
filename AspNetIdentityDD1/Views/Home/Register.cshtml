@@ -1,0 +1,30 @@
+﻿@model RegisterModel
+
+<div class="row">
+    <form>
+        <div class="col-xs-8 col-xs-offset-2">
+            <h1 class="text-center">Register</h1>
+            <div class="form-group">
+                <label asp-for="UserName" class="col-sm-2">UserName</label>
+                <div class="col-sm-10">
+                    <input type="text" asp-for="UserName" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Password" class="col-sm-2">Password</label>
+                <div class="col-sm-10">
+                    <input type="text" asp-for="Password" class="form-control" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="ConfirmPassword" class="col-sm-2">Password</label>
+                <div class="col-sm-10">
+                    <input type="text" asp-for="ConfirmPassword" class="form-control" />
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Submit</button>
+            <div asp-validation-summary="All"></div>
+        </div>
+    </form>
+</div>
+
