@@ -40,9 +40,17 @@ namespace AspNetIdentityDD1
 			services.AddIdentity<PluralsightUser, IdentityRole>(opt => 
 			{
 				opt.Tokens.EmailConfirmationTokenProvider = "emailconf";
+				opt.Password.RequireNonAlphanumeric = false;
+				opt.Password.RequiredUniqueChars = 4;
+				opt.User.RequireUniqueEmail = true;
+				opt.Lockout.AllowedForNewUsers = true;
+				opt.Lockout.MaxFailedAccessAttempts = 3;
+				opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+
 			}).AddEntityFrameworkStores<PluralsightUserDbContext>()
 			.AddDefaultTokenProviders()
-			.AddTokenProvider<EmailConfirmationTokenProvider<PluralsightUser>>("emailconf");
+			.AddTokenProvider<EmailConfirmationTokenProvider<PluralsightUser>>("emailconf")
+			.AddPasswordValidator<DoesNotContainPasswordValidator<PluralsightUser>>();
 
 
 			services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>, PluralsightUserClaimsPrincipalFactory>();
@@ -53,6 +61,7 @@ namespace AspNetIdentityDD1
 				opt.TokenLifespan = TimeSpan.FromMinutes(20));
 			services.Configure<EmailConfirmationTokenProviderOptions>(opt =>
 				opt.TokenLifespan = TimeSpan.FromDays(2));
+			services.Configure<PasswordHasherOptions>(opt => opt.IterationCount = 100000);
 
 		}
 

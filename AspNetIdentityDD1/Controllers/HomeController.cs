@@ -117,21 +117,28 @@ namespace AspNetIdentityDD1.Controllers
 			{
 				var user = await _userManager.FindByNameAsync(model.UserName);
 
-				if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+				if(user != null && await _userManager.IsLockedOutAsync(user))
 				{
-					if (!await _userManager.IsEmailConfirmedAsync(user))
+					if (await _userManager.CheckPasswordAsync(user, model.Password))
 					{
-						ModelState.AddModelError("", "Email is not confirmed");
-						return View();
+						if (!await _userManager.IsEmailConfirmedAsync(user))
+						{
+							ModelState.AddModelError("", "Email is not confirmed");
+							return View();
+						}
+						await _userManager.ResetAccessFailedCountAsync(user);
+						var principal = await _claimsPrincipalFactory.CreateAsync(user);
+						await HttpContext.SignInAsync("Identity.Application", principal);
+						return RedirectToAction("Index");
 					}
-
-					var principal = await _claimsPrincipalFactory.CreateAsync(user);
-					await HttpContext.SignInAsync("Identity.Application", principal);
-					return RedirectToAction("Index");
+					ModelState.AddModelError("", "Invalid UserName or Password");
 				}
-				ModelState.AddModelError("", "Invalid UserName or Password");
+				await _userManager.AccessFailedAsync(user);
+				if(await _userManager.IsLockedOutAsync(user))
+				{
+					// email user, notifying them of lockout
+				}
 			}
-
 			return View();
 		}
 
@@ -177,11 +184,9 @@ namespace AspNetIdentityDD1.Controllers
 			if (ModelState.IsValid)
 			{
 				var user = await _userManager.FindByEmailAsync(model.Email);
-
 				if (user != null)
 				{
 					var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
-
 					if (!result.Succeeded)
 					{
 						foreach (var error in result.Errors)
@@ -189,6 +194,10 @@ namespace AspNetIdentityDD1.Controllers
 							ModelState.AddModelError("", error.Description);
 						}
 						return View();
+					}
+					if (await _userManager.IsLockedOutAsync(user))
+					{
+						await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow);
 					}
 					return View("Success");
 				}
