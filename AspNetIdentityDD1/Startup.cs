@@ -37,18 +37,22 @@ namespace AspNetIdentityDD1
 				sql.MigrationsAssembly(migrationAssembly.ToString())
 			));
 
-			services.AddIdentity<PluralsightUser, IdentityRole>(opt => { })
-				.AddEntityFrameworkStores<PluralsightUserDbContext>()
-				.AddDefaultTokenProviders();
+			services.AddIdentity<PluralsightUser, IdentityRole>(opt => 
+			{
+				opt.Tokens.EmailConfirmationTokenProvider = "emailconf";
+			}).AddEntityFrameworkStores<PluralsightUserDbContext>()
+			.AddDefaultTokenProviders()
+			.AddTokenProvider<EmailConfirmationTokenProvider<PluralsightUser>>("emailconf");
+
 
 			services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>, PluralsightUserClaimsPrincipalFactory>();
 
 			services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
 
 			services.Configure<DataProtectionTokenProviderOptions>(opt => 
-				opt.TokenLifespan = TimeSpan.FromHours(3));
-
-
+				opt.TokenLifespan = TimeSpan.FromMinutes(20));
+			services.Configure<EmailConfirmationTokenProviderOptions>(opt =>
+				opt.TokenLifespan = TimeSpan.FromDays(2));
 
 		}
 

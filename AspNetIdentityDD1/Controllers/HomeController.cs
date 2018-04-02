@@ -69,17 +69,38 @@ namespace AspNetIdentityDD1.Controllers
 					user = new PluralsightUser
 					{
 						Id = Guid.NewGuid().ToString(),
-						UserName = model.UserName
+						UserName = model.UserName, 
+						Email = model.UserName
 					};
 					var result = await _userManager.CreateAsync(user, model.Password);
-					if(result == null)
+					if(result.Succeeded)
 					{
-
+						var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+						var confirmationEmail = Url.Action("ConfirmEmailAddress", "Home", new
+						{
+							token = token,
+							email = user.Email
+						}, Request.Scheme);
+						await System.IO.File.WriteAllTextAsync("emailConfirmLink.txt", confirmationEmail);
 					}
 				}
 				return View("Success");
 			}
 			return View();
+		}
+
+		public async Task<IActionResult> ConfirmEmailAddress(string token, string email)
+		{
+			var user = await _userManager.FindByEmailAsync(email);
+			if(user != null)
+			{
+				var result = await _userManager.ConfirmEmailAsync(user, token);
+				if(result.Succeeded)
+				{
+					return View("Success");
+				}
+			}
+			return View("Error");
 		}
 
 		[HttpGet]
@@ -98,6 +119,12 @@ namespace AspNetIdentityDD1.Controllers
 
 				if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
 				{
+					if (!await _userManager.IsEmailConfirmedAsync(user))
+					{
+						ModelState.AddModelError("", "Email is not confirmed");
+						return View();
+					}
+
 					var principal = await _claimsPrincipalFactory.CreateAsync(user);
 					await HttpContext.SignInAsync("Identity.Application", principal);
 					return RedirectToAction("Index");
