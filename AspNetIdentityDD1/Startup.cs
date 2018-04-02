@@ -38,11 +38,15 @@ namespace AspNetIdentityDD1
 			));
 
 			services.AddIdentity<PluralsightUser, IdentityRole>(opt => { })
-				.AddEntityFrameworkStores<PluralsightUserDbContext>();
+				.AddEntityFrameworkStores<PluralsightUserDbContext>()
+				.AddDefaultTokenProviders();
 
 			services.AddScoped<IUserClaimsPrincipalFactory<PluralsightUser>, PluralsightUserClaimsPrincipalFactory>();
 
 			services.ConfigureApplicationCookie(opt => opt.LoginPath = "/Home/Login");
+
+			services.Configure<DataProtectionTokenProviderOptions>(opt => 
+				opt.TokenLifespan = TimeSpan.FromHours(3));
 
 
 
